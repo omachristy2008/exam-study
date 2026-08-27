@@ -116,15 +116,15 @@ async function startServer() {
           created_at: new Date().toISOString(),
           profile: {
             education_type: 'both',
-            selected_courses: ['CSC 201', 'CSC 203', 'MTH 201'],
-            selected_waec_subjects: ['Mathematics', 'English Language', 'Physics'],
-            xp: 1500,
-            streak_days: 12,
-            overall_mastery_percentage: 95,
-            total_questions_answered: 240,
-            total_tests_completed: 18,
-            average_score_percentage: 92,
-            best_score_percentage: 100,
+            selected_courses: [],
+            selected_waec_subjects: [],
+            xp: 0,
+            streak_days: 0,
+            overall_mastery_percentage: 0,
+            total_questions_answered: 0,
+            total_tests_completed: 0,
+            average_score_percentage: 0,
+            best_score_percentage: 0,
           }
         };
         usersList.unshift(user);
@@ -715,7 +715,7 @@ async function startServer() {
 
   app.get('/api/admin/stats', requireAdmin, (req, res) => {
     res.json({
-      students_count: usersList.filter(u => u.role === 'student').length + 3280,
+      students_count: usersList.filter(u => u.role === 'student').length,
       universities_count: universities.filter(u => u.status === 'active').length,
       courses_count: courses.length,
       real_questions_count: questions.filter(q => q.source_type === 'real_past_question').length,

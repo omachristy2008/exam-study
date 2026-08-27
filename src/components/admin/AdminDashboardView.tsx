@@ -23,12 +23,12 @@ export const AdminDashboardView: React.FC = () => {
   const { user, isAdmin, navigate, showToast } = useApp();
 
   const [stats, setStats] = useState<any>({
-    students_count: 3280,
-    universities_count: 12,
-    courses_count: 48,
-    real_questions_count: 840,
-    pending_uploads_count: 3,
-    custom_institutions_count: 4,
+    students_count: 0,
+    universities_count: 0,
+    courses_count: 0,
+    real_questions_count: 0,
+    pending_uploads_count: 0,
+    custom_institutions_count: 0,
   });
   const [uploads, setUploads] = useState<UploadRecord[]>([]);
   const [customInstitutions, setCustomInstitutions] = useState<CustomInstitutionAggregate[]>([]);
@@ -196,7 +196,7 @@ export const AdminDashboardView: React.FC = () => {
           <div className="text-xs text-[#A1A1AA] font-semibold">Active Students</div>
           <div className="text-2xl font-black text-[#F5F5F5] flex items-center gap-2">
             <Users className="w-5 h-5 text-[#FF6A00]" />
-            <span>{(stats.students_count || 3280).toLocaleString()}</span>
+            <span>{(stats.students_count ?? 0).toLocaleString()}</span>
           </div>
         </div>
 
@@ -204,7 +204,7 @@ export const AdminDashboardView: React.FC = () => {
           <div className="text-xs text-[#A1A1AA] font-semibold">Verified Questions</div>
           <div className="text-2xl font-black text-emerald-400 flex items-center gap-2">
             <BookOpen className="w-5 h-5" />
-            <span>{(stats.real_questions_count || 840).toLocaleString()}</span>
+            <span>{(stats.real_questions_count ?? 0).toLocaleString()}</span>
           </div>
         </div>
 
@@ -212,7 +212,7 @@ export const AdminDashboardView: React.FC = () => {
           <div className="text-xs text-[#A1A1AA] font-semibold">Active Universities</div>
           <div className="text-2xl font-black text-[#FFA05C] flex items-center gap-2">
             <Building2 className="w-5 h-5" />
-            <span>{stats.universities_count || 12}</span>
+            <span>{stats.universities_count ?? 0}</span>
           </div>
         </div>
 

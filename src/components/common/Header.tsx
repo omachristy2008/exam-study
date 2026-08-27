@@ -9,12 +9,14 @@ import {
   Info,
   LogOut,
   LogIn,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
 import { useApp } from '../../context/AppContext';
 
 export const Header: React.FC = () => {
-  const { user, navigate, currentRoute, isAdmin, logout } = useApp();
+  const { user, navigate, currentRoute, isAdmin, logout, theme, toggleTheme } = useApp();
 
   return (
     <header className="sticky top-0 z-30 bg-[#151518] border-b border-[#27272C] px-4 lg:px-8 py-3.5 flex items-center justify-between shadow-sm">
@@ -43,7 +45,7 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Right side: Stats, Quick Action, Role, Profile */}
+      {/* Right side: Stats, Theme Toggle, Quick Action, Role, Profile */}
       <div className="flex items-center gap-2 sm:gap-3">
         {/* Quick Upload CTA (desktop) */}
         {user && (
@@ -79,6 +81,20 @@ export const Header: React.FC = () => {
             <span className="text-[10px] text-[#71717A] hidden xs:inline">XP</span>
           </button>
         )}
+
+        {/* Persistent Theme Preference Toggle */}
+        <button
+          onClick={toggleTheme}
+          aria-label={theme === 'dark' ? 'Switch to High-Contrast Light Mode' : 'Switch to Dark Academic Mode'}
+          title={theme === 'dark' ? 'Switch to High-Contrast Light Mode' : 'Switch to Dark Academic Mode'}
+          className="flex items-center justify-center p-2 rounded-xl bg-[#1A1A1E] hover:bg-[#202026] border border-[#27272C] hover:border-[#FF6A00]/40 text-[#F5F5F5] transition-all cursor-pointer group"
+        >
+          {theme === 'dark' ? (
+            <Sun className="w-4 h-4 text-amber-400 group-hover:rotate-45 transition-transform" />
+          ) : (
+            <Moon className="w-4 h-4 text-[#FF6A00] group-hover:-rotate-12 transition-transform" />
+          )}
+        </button>
 
         {/* Admin Badge & Link: ONLY visible if isAdmin */}
         {isAdmin && (

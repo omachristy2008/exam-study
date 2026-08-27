@@ -15,6 +15,20 @@
     --text-muted: #71717A;
   }
 
+  html.light {
+    --bg-main: #F8FAFC;
+    --bg-card: #FFFFFF;
+    --bg-card-hover: #F1F5F9;
+    --bg-card-subtle: #F8FAFC;
+    --border-color: #E2E8F0;
+    --border-hover: #CBD5E1;
+    --primary-orange: #EA580C;
+    --primary-hover: #C2410C;
+    --text-primary: #0F172A;
+    --text-secondary: #334155;
+    --text-muted: #64748B;
+  }
+
   body {
     background-color: #0D0D0F;
     color: #F5F5F5;
@@ -22,10 +36,16 @@
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     min-height: 100vh;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  html.light body {
+    background-color: #F8FAFC;
+    color: #0F172A;
   }
 }
 
-/* Custom Clean Dark Scrollbars */
+/* Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -41,7 +61,17 @@
   background: #FF6A00;
 }
 
-/* Clean Dark Academic Card Utilities */
+html.light ::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+html.light ::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+}
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: #FF6A00;
+}
+
+/* Base Academic Card Utilities */
 .glass-panel,
 .academic-panel {
   background: #151518;
@@ -87,4 +117,154 @@
 .glass-input:focus {
   border-color: #FF6A00;
   outline: none;
+}
+
+/* =========================================================================
+   HIGH-CONTRAST LIGHT MODE COMPREHENSIVE COMPONENT OVERRIDES
+   ========================================================================= */
+
+html.light {
+  /* Surfaces & Backgrounds */
+  .bg-\[\#0D0D0F\] {
+    background-color: #F8FAFC !important;
+  }
+  .bg-\[\#151518\] {
+    background-color: #FFFFFF !important;
+  }
+  .bg-\[\#1A1A1E\] {
+    background-color: #F1F5F9 !important;
+  }
+  .bg-\[\#1E1E23\] {
+    background-color: #E2E8F0 !important;
+  }
+  .bg-\[\#202026\] {
+    background-color: #E2E8F0 !important;
+  }
+
+  /* Semi-transparent Dark Surfaces to Crisp Light Surfaces */
+  .bg-white\/\[0\.02\],
+  .bg-white\/\[0\.03\],
+  .bg-white\/\[0\.04\],
+  .bg-white\/\[0\.05\],
+  .bg-white\/\[0\.06\],
+  .bg-white\/\[0\.08\] {
+    background-color: #FFFFFF !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+  }
+
+  .hover\:bg-white\/\[0\.04\]:hover,
+  .hover\:bg-white\/\[0\.06\]:hover,
+  .hover\:bg-white\/\[0\.08\]:hover {
+    background-color: #F1F5F9 !important;
+  }
+
+  /* Borders */
+  .border-\[\#27272C\],
+  .border-\[\#3E3E46\],
+  .border-white\/6,
+  .border-white\/8,
+  .border-white\/10,
+  .border-white\/12,
+  .border-white\/15,
+  .border-white\/20 {
+    border-color: #E2E8F0 !important;
+  }
+
+  /* Typography / Text Colors */
+  .text-\[\#F5F5F5\] {
+    color: #0F172A !important;
+  }
+  .text-\[\#A1A1AA\],
+  .text-slate-300,
+  .text-slate-400 {
+    color: #334155 !important;
+  }
+  .text-\[\#71717A\],
+  .text-slate-500 {
+    color: #64748B !important;
+  }
+  .text-slate-200 {
+    color: #1E293B !important;
+  }
+  .text-\[\#FFA05C\] {
+    color: #C2410C !important;
+  }
+
+  /* When text-white is used directly on headers or card titles */
+  h1.text-white,
+  h2.text-white,
+  h3.text-white,
+  h4.text-white,
+  span.text-white,
+  div.text-white:not(.bg-gradient-to-r *):not(.bg-\[\#FF6A00\] *):not(.bg-emerald-500 *):not(.bg-rose-500 *) {
+    color: #0F172A;
+  }
+
+  /* Specific Card Classes */
+  .glass-panel,
+  .academic-panel,
+  .glass-card,
+  .academic-card,
+  .glass-card-interactive {
+    background: #FFFFFF !important;
+    border-color: #E2E8F0 !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  }
+
+  .glass-card:hover,
+  .academic-card:hover,
+  .glass-card-interactive:hover {
+    background: #F8FAFC !important;
+    border-color: #CBD5E1 !important;
+  }
+
+  .glass-pill {
+    background: #F1F5F9 !important;
+    border-color: #E2E8F0 !important;
+    color: #0F172A !important;
+  }
+
+  .glass-input,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]),
+  select,
+  textarea {
+    background-color: #FFFFFF !important;
+    color: #0F172A !important;
+    border-color: #CBD5E1 !important;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #94A3B8 !important;
+  }
+
+  /* Navigation & Chrome */
+  header {
+    background-color: #FFFFFF !important;
+    border-bottom-color: #E2E8F0 !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  }
+
+  aside {
+    background-color: #FFFFFF !important;
+    border-right-color: #E2E8F0 !important;
+  }
+
+  nav.fixed {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    border-top-color: #E2E8F0 !important;
+  }
+
+  /* Toast alerts in light mode */
+  .bg-\[\#151518\].border {
+    background-color: #FFFFFF !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Admin Badge in Light Mode */
+  .bg-purple-950\/80 {
+    background-color: #F3E8FF !important;
+    color: #6B21A8 !important;
+    border-color: #D8B4FE !important;
+  }
 }

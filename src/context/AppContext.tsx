@@ -33,6 +33,9 @@ interface AppContextType {
   switchRole: (role: 'student' | 'admin') => Promise<void>;
   updateAcademicProfile: (profileUpdates: Partial<StudentProfile>) => Promise<void>;
   celebrate: () => void;
+  theme: 'dark' | 'light';
+  toggleTheme: () => void;
+  setTheme: (theme: 'dark' | 'light') => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -45,6 +48,44 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [activeExam, setActiveExam] = useState<ExamSession | null>(null);
   const [latestResult, setLatestResult] = useState<ExamResult | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [theme, setThemeState] = useState<'dark' | 'light'>(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('examai_theme');
+      if (savedTheme === 'light' || savedTheme === 'dark') {
+        return savedTheme;
+      }
+    }
+    return 'dark';
+  });
+
+  // Apply theme to document root
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'light') {
+      root.classList.remove('dark');
+      root.classList.add('light');
+      root.setAttribute('data-theme', 'light');
+      root.style.colorScheme = 'light';
+    } else {
+      root.classList.remove('light');
+      root.classList.add('dark');
+      root.setAttribute('data-theme', 'dark');
+      root.style.colorScheme = 'dark';
+    }
+    try {
+      localStorage.setItem('examai_theme', theme);
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, [theme]);
+
+  const setTheme = (newTheme: 'dark' | 'light') => {
+    setThemeState(newTheme);
+  };
+
+  const toggleTheme = () => {
+    setThemeState(prev => (prev === 'dark' ? 'light' : 'dark'));
+  };
 
   // Strict Admin authorization check: ONLY omachristy4@gmail.com is authorized to view or manage the admin space
   const isAdmin = !!user && (user.email.toLowerCase() === 'omachristy4@gmail.com' || (user.role === 'admin' && user.email.toLowerCase() === 'omachristy4@gmail.com'));
@@ -268,6 +309,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         switchRole,
         updateAcademicProfile,
         celebrate,
+        theme,
+        toggleTheme,
+        setTheme,
       }}
     >
       {children}

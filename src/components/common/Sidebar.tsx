@@ -13,12 +13,14 @@ import {
   Flame,
   Zap,
   LogOut,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
 import { useApp } from '../../context/AppContext';
 
 export const Sidebar: React.FC = () => {
-  const { currentRoute, navigate, user, isAdmin, logout } = useApp();
+  const { currentRoute, navigate, user, isAdmin, logout, theme, toggleTheme } = useApp();
 
   const navItems = [
     { label: 'Home', route: '/dashboard', icon: LayoutDashboard },
@@ -56,7 +58,7 @@ export const Sidebar: React.FC = () => {
                   ? 'WAEC & University'
                   : user.profile.education_type === 'waec'
                   ? 'WAEC Candidate'
-                  : user.profile.custom_university_name || 'UNILAG 200L'}
+                  : user.profile.custom_university_name || 'University Student'}
               </div>
             </div>
           </div>
@@ -126,8 +128,26 @@ export const Sidebar: React.FC = () => {
         )}
       </div>
 
-      {/* Footer Navigation: Profile & Settings & Sign Out */}
+      {/* Footer Navigation: Profile & Settings & Theme & Sign Out */}
       <div className="p-3 border-t border-[#27272C] space-y-1 bg-[#151518]">
+        <button
+          onClick={toggleTheme}
+          className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium text-[#A1A1AA] hover:text-[#F5F5F5] hover:bg-[#1A1A1E] transition-all cursor-pointer group"
+          title="Toggle High-Contrast Light Mode or Dark Academic Mode"
+        >
+          <div className="flex items-center gap-3">
+            {theme === 'dark' ? (
+              <Sun className="w-4 h-4 text-amber-400 group-hover:rotate-45 transition-transform" />
+            ) : (
+              <Moon className="w-4 h-4 text-[#FF6A00] group-hover:-rotate-12 transition-transform" />
+            )}
+            <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+          </div>
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#202026] text-[#71717A]">
+            {theme === 'dark' ? 'Dark' : 'Light'}
+          </span>
+        </button>
+
         <button
           onClick={() => navigate('/profile')}
           className={`w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer ${

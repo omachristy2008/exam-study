@@ -1,7 +1,9 @@
 {
   "name": "EXAMAI",
   "description": "AI-powered examination preparation platform for WAEC and University examinations with verified past questions, AI practice generator, timed exam simulator, AI tutoring, and study analytics.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": [
+    "microphone"
+  ],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
   ]
