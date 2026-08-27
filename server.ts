@@ -38,32 +38,23 @@ let questions: Question[] = [...INITIAL_QUESTIONS];
 let achievements = [...INITIAL_ACHIEVEMENTS];
 let uploads: UploadRecord[] = [...INITIAL_UPLOADS];
 let customAggregates = [...CUSTOM_INSTITUTION_AGGREGATES];
-let examResults: ExamResult[] = [...INITIAL_EXAM_RESULTS];
-let currentUser: User = { ...CURRENT_USER };
+let examResults: ExamResult[] = [];
+let currentUser: User | null = null;
 
-const usersList: User[] = [
-  currentUser,
-  {
-    id: 'user_admin_1',
-    name: 'Dr. Babatunde Moderator',
-    email: 'babatunde.admin@examai.app',
-    role: 'admin',
-    avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    created_at: '2026-07-01T08:00:00Z',
-    profile: {
-      education_type: 'both',
-      selected_courses: [],
-      selected_waec_subjects: [],
-      xp: 9990,
-      streak_days: 35,
-      overall_mastery_percentage: 98,
-      total_questions_answered: 500,
-      total_tests_completed: 40,
-      average_score_percentage: 95,
-      best_score_percentage: 100,
-    }
+const ADMIN_EMAIL = 'omachristy4@gmail.com';
+
+const usersList: User[] = [];
+
+// Helper middleware: Admin access restricted ONLY to omachristy4@gmail.com
+const requireAdmin = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const isAuthAdmin = currentUser && (currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() || (currentUser.role === 'admin' && currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()));
+  if (!isAuthAdmin) {
+    return res.status(403).json({
+      error: `Access restricted: Only the platform administrator (${ADMIN_EMAIL}) can access this administrative resource.`,
+    });
   }
-];
+  next();
+};
 
 async function startServer() {
   const app = express();
@@ -83,22 +74,97 @@ async function startServer() {
     res.json(currentUser);
   });
 
+  app.post('/api/auth/logout', (req, res) => {
+    currentUser = null;
+    res.json({ success: true });
+  });
+
   app.post('/api/auth/switch-user', (req, res) => {
+    // Only the verified admin omachristy4@gmail.com can switch to admin role
     const { role } = req.body;
+    if (!currentUser) {
+      return res.status(401).json({ error: 'Unauthenticated' });
+    }
+    if (role === 'admin' && currentUser.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+      return res.status(403).json({ error: 'Access forbidden: Only the platform administrator can assume admin privileges.' });
+    }
     const target = usersList.find(u => u.role === role) || usersList[0];
-    currentUser = { ...target };
+    if (target) {
+      currentUser = { ...target };
+    }
     res.json(currentUser);
   });
 
   app.post('/api/auth/login', (req, res) => {
     const { email } = req.body;
-    const user = usersList.find(u => u.email.toLowerCase() === (email || '').toLowerCase()) || currentUser;
+    const cleanEmail = (email || '').trim().toLowerCase();
+    if (!cleanEmail) {
+      return res.status(400).json({ error: 'Email address is required.' });
+    }
+
+    let user = usersList.find(u => u.email.toLowerCase() === cleanEmail);
+
+    if (!user) {
+      // If user logs in with the admin email, create/provision admin profile
+      if (cleanEmail === ADMIN_EMAIL.toLowerCase()) {
+        user = {
+          id: 'user_admin_owner',
+          name: 'Oma Christy (Admin)',
+          email: ADMIN_EMAIL,
+          role: 'admin',
+          avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+          created_at: new Date().toISOString(),
+          profile: {
+            education_type: 'both',
+            selected_courses: ['CSC 201', 'CSC 203', 'MTH 201'],
+            selected_waec_subjects: ['Mathematics', 'English Language', 'Physics'],
+            xp: 1500,
+            streak_days: 12,
+            overall_mastery_percentage: 95,
+            total_questions_answered: 240,
+            total_tests_completed: 18,
+            average_score_percentage: 92,
+            best_score_percentage: 100,
+          }
+        };
+        usersList.unshift(user);
+      } else {
+        // Create fresh student user with clean slate (no pre-studied courses or reviews)
+        const rawName = cleanEmail.split('@')[0];
+        const formattedName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+        user = {
+          id: `user_${Date.now()}`,
+          name: formattedName || 'Student User',
+          email: cleanEmail,
+          role: 'student',
+          avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(cleanEmail)}`,
+          created_at: new Date().toISOString(),
+          profile: {
+            education_type: 'both',
+            selected_courses: [],
+            selected_waec_subjects: [],
+            xp: 0,
+            streak_days: 0,
+            overall_mastery_percentage: 0,
+            total_questions_answered: 0,
+            total_tests_completed: 0,
+            average_score_percentage: 0,
+            best_score_percentage: 0,
+          }
+        };
+        usersList.push(user);
+      }
+    }
+
     currentUser = { ...user };
     res.json({ success: true, user: currentUser });
   });
 
   app.post('/api/auth/register', (req, res) => {
     const { name, email, education_type, university_id, custom_university_name, faculty_id, custom_faculty_name, department_id, custom_department_name, level, semester, selected_courses, selected_waec_subjects } = req.body;
+
+    const cleanEmail = (email || 'student@examai.app').trim().toLowerCase();
+    const isOwnerAdmin = cleanEmail === ADMIN_EMAIL.toLowerCase();
 
     // Record custom institutions if provided
     if (custom_university_name) {
@@ -119,9 +185,9 @@ async function startServer() {
 
     const newUser: User = {
       id: `user_${Date.now()}`,
-      name: name || 'Student User',
-      email: email || 'student@examai.app',
-      role: 'student',
+      name: name || (isOwnerAdmin ? 'Oma Christy (Admin)' : 'Student User'),
+      email: cleanEmail,
+      role: isOwnerAdmin ? 'admin' : 'student',
       avatar_url: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name || 'Student')}`,
       created_at: new Date().toISOString(),
       profile: {
@@ -134,12 +200,12 @@ async function startServer() {
         custom_department_name: custom_department_name || null,
         level: level || '100',
         semester: semester || '1st',
-        selected_courses: selected_courses || ['CSC 201', 'MTH 201'],
-        selected_waec_subjects: selected_waec_subjects || ['Mathematics', 'English Language', 'Physics'],
-        xp: 100,
-        streak_days: 1,
+        selected_courses: selected_courses || [],
+        selected_waec_subjects: selected_waec_subjects || [],
+        xp: 0,
+        streak_days: 0,
         last_active_date: new Date().toISOString().split('T')[0],
-        overall_mastery_percentage: 60,
+        overall_mastery_percentage: 0,
         total_questions_answered: 0,
         total_tests_completed: 0,
         average_score_percentage: 0,
@@ -154,6 +220,9 @@ async function startServer() {
 
   // Updating profile preserves all history, XP, streaks, and test records
   app.put('/api/auth/profile', (req, res) => {
+    if (!currentUser) {
+      return res.status(401).json({ error: 'Unauthenticated' });
+    }
     const profileUpdates: Partial<StudentProfile> = req.body.profile || {};
     const nameUpdate = req.body.name;
     const avatarUpdate = req.body.avatar_url;
@@ -409,12 +478,15 @@ async function startServer() {
   app.post('/api/ai/tutor-chat', async (req, res) => {
     try {
       const { messages, user_context } = req.body;
+      const currentCourse = currentUser?.profile?.selected_courses?.[0] || 'CSC 201';
+      const recentScore = currentUser?.profile?.average_score_percentage || 75;
+
       const result = await chatWithTutorAI({
         messages: messages || [],
         user_context: user_context || {
-          current_course: currentUser.profile.selected_courses[0] || 'CSC 201',
+          current_course: currentCourse,
           weak_areas: ['Trees & Binary Search Trees', 'Trigonometry & Bearings'],
-          recent_score: currentUser.profile.average_score_percentage,
+          recent_score: recentScore,
         },
       });
       res.json(result);
@@ -427,12 +499,13 @@ async function startServer() {
   // 5. AI Study Coach
   app.post('/api/ai/study-coach', async (req, res) => {
     try {
-      const weakTopics = req.body.weak_topics || ['Trees & Binary Search Trees', 'Logarithms & Indices', 'Trigonometry & Bearings'];
-      const targetCourses = req.body.target_courses || currentUser.profile.selected_courses || ['CSC 201', 'WAEC Mathematics'];
-      const recentScores = examResults.map(r => r.score_percentage).slice(0, 5);
+      const userExams = currentUser ? examResults.filter(r => r.user_id === currentUser?.id) : [];
+      const userWeakTopics = req.body.weak_topics || [];
+      const targetCourses = req.body.target_courses || currentUser?.profile?.selected_courses || [];
+      const recentScores = userExams.map(r => r.score_percentage).slice(0, 5);
 
       const coachPlan = await generateStudyCoachPlanAI({
-        weak_topics: weakTopics,
+        weak_topics: userWeakTopics,
         recent_scores: recentScores,
         target_courses_or_subjects: targetCourses,
       });
@@ -497,7 +570,7 @@ async function startServer() {
     const result: ExamResult = {
       id: `res_${Date.now()}`,
       exam_session_id: `sess_${Date.now()}`,
-      user_id: currentUser.id,
+      user_id: currentUser ? currentUser.id : `anon_${Date.now()}`,
       title: title || 'Examination Practice Simulation',
       exam_type: exam_type || 'university',
       category_name: category_name || 'Practice Exam',
@@ -517,46 +590,50 @@ async function startServer() {
 
     examResults.unshift(result);
 
-    // Update currentUser cumulative stats
-    currentUser.profile.xp += xpEarned;
-    currentUser.profile.total_questions_answered += total;
-    currentUser.profile.total_tests_completed += 1;
-    if (scorePercentage > currentUser.profile.best_score_percentage) {
-      currentUser.profile.best_score_percentage = scorePercentage;
-    }
-    const allScores = examResults.map(r => r.score_percentage);
-    currentUser.profile.average_score_percentage = Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length);
-    currentUser.profile.overall_mastery_percentage = Math.min(100, Math.round((currentUser.profile.average_score_percentage * 0.7) + (Math.min(currentUser.profile.total_questions_answered, 300) / 300 * 30)));
+    // Update currentUser cumulative stats if authenticated
+    if (currentUser) {
+      currentUser.profile.xp += xpEarned;
+      currentUser.profile.total_questions_answered += total;
+      currentUser.profile.total_tests_completed += 1;
+      if (scorePercentage > currentUser.profile.best_score_percentage) {
+        currentUser.profile.best_score_percentage = scorePercentage;
+      }
+      const allScores = examResults.filter(r => r.user_id === currentUser!.id).map(r => r.score_percentage);
+      currentUser.profile.average_score_percentage = Math.round(allScores.reduce((a, b) => a + b, 0) / (allScores.length || 1));
+      currentUser.profile.overall_mastery_percentage = Math.min(100, Math.round((currentUser.profile.average_score_percentage * 0.7) + (Math.min(currentUser.profile.total_questions_answered, 300) / 300 * 30)));
 
-    // Unlock achievements check
-    achievements.forEach(ach => {
-      if (ach.id === 'ach_first_test') {
-        ach.is_unlocked = true;
-        ach.progress = 1;
-      }
-      if (ach.id === 'ach_100_q') {
-        ach.progress = Math.min(100, currentUser.profile.total_questions_answered);
-        if (ach.progress >= 100) ach.is_unlocked = true;
-      }
-      if (ach.id === 'ach_500_q') {
-        ach.progress = Math.min(500, currentUser.profile.total_questions_answered);
-        if (ach.progress >= 500) ach.is_unlocked = true;
-      }
-      if (ach.id === 'ach_score_90' && scorePercentage >= 90) {
-        ach.is_unlocked = true;
-        ach.progress = 1;
-      }
-      if (ach.id === 'ach_perfect' && scorePercentage === 100 && total >= 5) {
-        ach.is_unlocked = true;
-        ach.progress = 1;
-      }
-    });
+      // Unlock achievements check
+      achievements.forEach(ach => {
+        if (ach.id === 'ach_first_test') {
+          ach.is_unlocked = true;
+          ach.progress = 1;
+        }
+        if (ach.id === 'ach_100_q') {
+          ach.progress = Math.min(100, currentUser!.profile.total_questions_answered);
+          if (ach.progress >= 100) ach.is_unlocked = true;
+        }
+        if (ach.id === 'ach_500_q') {
+          ach.progress = Math.min(500, currentUser!.profile.total_questions_answered);
+          if (ach.progress >= 500) ach.is_unlocked = true;
+        }
+        if (ach.id === 'ach_score_90' && scorePercentage >= 90) {
+          ach.is_unlocked = true;
+          ach.progress = 1;
+        }
+        if (ach.id === 'ach_perfect' && scorePercentage === 100 && total >= 5) {
+          ach.is_unlocked = true;
+          ach.progress = 1;
+        }
+      });
+    }
 
     res.json({ success: true, result });
   });
 
   app.get('/api/exams/results', (req, res) => {
-    res.json(examResults);
+    if (!currentUser) return res.json([]);
+    const userResults = examResults.filter(r => r.user_id === currentUser!.id);
+    res.json(userResults);
   });
 
   app.get('/api/exams/results/:id', (req, res) => {
@@ -572,6 +649,9 @@ async function startServer() {
   });
 
   app.post('/api/uploads', (req, res) => {
+    if (!currentUser) {
+      return res.status(401).json({ error: 'Please sign in to upload question papers.' });
+    }
     const {
       file_name,
       file_type = 'application/pdf',
@@ -631,9 +711,9 @@ async function startServer() {
     res.json(achievements);
   });
 
-  // --- ADMIN DASHBOARD & CONTENT MANAGEMENT ---
+  // --- ADMIN DASHBOARD & CONTENT MANAGEMENT (Restricted to omachristy4@gmail.com) ---
 
-  app.get('/api/admin/stats', (req, res) => {
+  app.get('/api/admin/stats', requireAdmin, (req, res) => {
     res.json({
       students_count: usersList.filter(u => u.role === 'student').length + 3280,
       universities_count: universities.filter(u => u.status === 'active').length,
@@ -645,11 +725,11 @@ async function startServer() {
     });
   });
 
-  app.get('/api/admin/uploads', (req, res) => {
+  app.get('/api/admin/uploads', requireAdmin, (req, res) => {
     res.json(uploads);
   });
 
-  app.post('/api/admin/uploads/:id/moderate', (req, res) => {
+  app.post('/api/admin/uploads/:id/moderate', requireAdmin, (req, res) => {
     const { status, moderator_notes } = req.body; // 'approved' | 'rejected'
     const upload = uploads.find(u => u.id === req.params.id);
     if (!upload) return res.status(404).json({ error: 'Upload not found' });
@@ -695,12 +775,12 @@ async function startServer() {
     res.json({ success: true, upload });
   });
 
-  app.get('/api/admin/custom-institutions', (req, res) => {
+  app.get('/api/admin/custom-institutions', requireAdmin, (req, res) => {
     res.json(customAggregates);
   });
 
   // Promote custom "Other" institution into official database
-  app.post('/api/admin/custom-institutions/promote', (req, res) => {
+  app.post('/api/admin/custom-institutions/promote', requireAdmin, (req, res) => {
     const { name, short_name, state } = req.body;
     const cleanId = `uni_${name.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
 
@@ -720,7 +800,7 @@ async function startServer() {
     res.json({ success: true, university: newUni });
   });
 
-  app.post('/api/admin/universities', (req, res) => {
+  app.post('/api/admin/universities', requireAdmin, (req, res) => {
     const { name, short_name, state, country = 'Nigeria' } = req.body;
     const newUni: University = {
       id: `uni_${Date.now()}`,
@@ -735,14 +815,14 @@ async function startServer() {
     res.json({ success: true, university: newUni });
   });
 
-  app.put('/api/admin/universities/:id', (req, res) => {
+  app.put('/api/admin/universities/:id', requireAdmin, (req, res) => {
     const uni = universities.find(u => u.id === req.params.id);
     if (!uni) return res.status(404).json({ error: 'University not found' });
     Object.assign(uni, req.body);
     res.json({ success: true, university: uni });
   });
 
-  app.post('/api/admin/questions', (req, res) => {
+  app.post('/api/admin/questions', requireAdmin, (req, res) => {
     const newQ: Question = {
       id: `q_admin_${Date.now()}`,
       ...req.body,
@@ -752,14 +832,14 @@ async function startServer() {
     res.json({ success: true, question: newQ });
   });
 
-  app.put('/api/admin/questions/:id', (req, res) => {
+  app.put('/api/admin/questions/:id', requireAdmin, (req, res) => {
     const q = questions.find(item => item.id === req.params.id);
     if (!q) return res.status(404).json({ error: 'Question not found' });
     Object.assign(q, req.body, { updated_at: new Date().toISOString() });
     res.json({ success: true, question: q });
   });
 
-  app.get('/api/admin/users', (req, res) => {
+  app.get('/api/admin/users', requireAdmin, (req, res) => {
     res.json(usersList);
   });
 

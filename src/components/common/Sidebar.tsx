@@ -12,12 +12,13 @@ import {
   Shield,
   Flame,
   Zap,
+  LogOut,
 } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
 import { useApp } from '../../context/AppContext';
 
 export const Sidebar: React.FC = () => {
-  const { currentRoute, navigate, user, switchRole } = useApp();
+  const { currentRoute, navigate, user, isAdmin, logout } = useApp();
 
   const navItems = [
     { label: 'Home', route: '/dashboard', icon: LayoutDashboard },
@@ -30,28 +31,28 @@ export const Sidebar: React.FC = () => {
     { label: 'Upload Past Question', route: '/upload-question', icon: UploadCloud },
   ];
 
-  const isAdmin = user?.role === 'admin';
-
   return (
-    <aside className="hidden lg:flex flex-col w-64 bg-white/[0.03] backdrop-blur-2xl border-r border-white/10 h-screen sticky top-0 z-30 select-none shadow-2xl">
+    <aside className="hidden lg:flex flex-col w-64 bg-[#151518] border-r border-[#27272C] h-screen sticky top-0 z-30 select-none shadow-xl">
       {/* Brand Header */}
-      <div className="p-5 border-b border-white/10 flex items-center justify-between">
-        <button onClick={() => navigate('/dashboard')} className="text-left">
+      <div className="p-5 border-b border-[#27272C] flex items-center justify-between">
+        <button onClick={() => navigate('/dashboard')} className="text-left cursor-pointer">
           <BrandLogo size="md" showTagline />
         </button>
       </div>
 
-      {/* Student Profile Quick Badge */}
+      {/* Student / Admin Profile Quick Badge */}
       {user && (
-        <div className="px-4 py-3 mx-3 my-2 bg-white/[0.04] hover:bg-white/[0.07] backdrop-blur-xl border border-white/10 rounded-2xl flex items-center justify-between transition-all">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#FF6A00] to-[#FF8A3D] text-white flex items-center justify-center font-bold text-xs shadow-md shadow-[#FF6A00]/25">
+        <div className="px-4 py-3 mx-3 my-2 bg-[#1A1A1E] border border-[#27272C] rounded-2xl flex items-center justify-between transition-all">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-[#FF6A00] text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
               {user.name.charAt(0)}
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-bold text-white truncate">{user.name}</div>
-              <div className="text-[10px] text-slate-400 truncate">
-                {user.profile.education_type === 'both'
+              <div className="text-xs font-bold text-[#F5F5F5] truncate">{user.name}</div>
+              <div className="text-[10px] text-[#A1A1AA] truncate">
+                {isAdmin
+                  ? 'Administrator'
+                  : user.profile.education_type === 'both'
                   ? 'WAEC & University'
                   : user.profile.education_type === 'waec'
                   ? 'WAEC Candidate'
@@ -59,8 +60,8 @@ export const Sidebar: React.FC = () => {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-1 text-xs font-black text-[#FF7A1A] bg-[#FF6A00]/15 backdrop-blur-md px-2 py-0.5 rounded-lg border border-[#FF6A00]/30">
-            <Flame className="w-3.5 h-3.5 fill-[#FF6A00]" />
+          <div className="flex items-center gap-1 text-xs font-black text-[#FFA05C] bg-[#FF6A00]/15 px-2 py-0.5 rounded-lg border border-[#FF6A00]/30 flex-shrink-0">
+            <Flame className="w-3.5 h-3.5 fill-[#FF6A00] text-[#FF6A00]" />
             <span>{user.profile.streak_days}d</span>
           </div>
         </div>
@@ -68,7 +69,7 @@ export const Sidebar: React.FC = () => {
 
       {/* Main Navigation Links */}
       <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
-        <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400 px-3 py-1.5">
+        <div className="text-[10px] uppercase font-bold tracking-wider text-[#71717A] px-3 py-1.5">
           Main Menu
         </div>
         {navItems.map(item => {
@@ -78,22 +79,22 @@ export const Sidebar: React.FC = () => {
             <button
               key={item.route}
               onClick={() => navigate(item.route)}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
                 isActive
-                  ? 'bg-gradient-to-r from-[#FF6A00] to-[#FF7A1A] text-white shadow-lg shadow-[#FF6A00]/30 font-bold border border-white/20'
-                  : 'text-slate-300 hover:text-white hover:bg-white/[0.08] border border-transparent hover:border-white/10'
+                  ? 'bg-[#FF6A00] text-white font-bold'
+                  : 'text-[#A1A1AA] hover:text-[#F5F5F5] hover:bg-[#1A1A1E]'
               }`}
             >
               <div className="flex items-center gap-3">
-                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-[#71717A]'}`} />
                 <span>{item.label}</span>
               </div>
               {item.badge && (
                 <span
                   className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                     isActive
-                      ? 'bg-white/25 text-white'
-                      : 'bg-[#FF6A00]/20 text-[#FFA05C] border border-[#FF6A00]/40 backdrop-blur-sm'
+                      ? 'bg-black/25 text-white'
+                      : 'bg-[#FF6A00]/15 text-[#FFA05C] border border-[#FF6A00]/30'
                   }`}
                 >
                   {item.badge}
@@ -103,7 +104,7 @@ export const Sidebar: React.FC = () => {
           );
         })}
 
-        {/* Admin Section (if admin) */}
+        {/* Admin Section: ONLY visible if authenticated user is the verified admin (omachristy4@gmail.com) */}
         {isAdmin && (
           <div className="pt-3">
             <div className="text-[10px] uppercase font-bold tracking-wider text-purple-400 px-3 py-1.5 flex items-center gap-1.5">
@@ -112,10 +113,10 @@ export const Sidebar: React.FC = () => {
             </div>
             <button
               onClick={() => navigate('/admin')}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
                 currentRoute.startsWith('/admin')
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-600/30 border border-white/20'
-                  : 'text-purple-300 hover:bg-purple-900/30 hover:text-white border border-transparent hover:border-purple-500/20'
+                  ? 'bg-purple-600 text-white font-bold'
+                  : 'text-purple-300 hover:bg-[#1A1A1E] hover:text-white'
               }`}
             >
               <Shield className="w-4 h-4" />
@@ -125,49 +126,46 @@ export const Sidebar: React.FC = () => {
         )}
       </div>
 
-      {/* Footer Navigation: Profile & Settings & Role Toggle */}
-      <div className="p-3 border-t border-white/10 space-y-1 bg-white/[0.02] backdrop-blur-xl">
+      {/* Footer Navigation: Profile & Settings & Sign Out */}
+      <div className="p-3 border-t border-[#27272C] space-y-1 bg-[#151518]">
         <button
           onClick={() => navigate('/profile')}
-          className={`w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${
+          className={`w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer ${
             currentRoute === '/profile'
-              ? 'bg-[#FF6A00]/20 text-[#FFA05C] border border-[#FF6A00]/40 backdrop-blur-md'
-              : 'text-slate-300 hover:text-white hover:bg-white/[0.06]'
+              ? 'bg-[#1A1A1E] text-[#FFA05C] border border-[#FF6A00]/40'
+              : 'text-[#A1A1AA] hover:text-[#F5F5F5] hover:bg-[#1A1A1E]'
           }`}
         >
-          <User className="w-4 h-4" />
-          <span>Profile & Academic</span>
+          <User className="w-4 h-4 text-[#71717A]" />
+          <span>Academic Profile</span>
         </button>
 
         <button
           onClick={() => navigate('/settings')}
-          className={`w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${
+          className={`w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer ${
             currentRoute === '/settings'
-              ? 'bg-[#FF6A00]/20 text-[#FFA05C] border border-[#FF6A00]/40 backdrop-blur-md'
-              : 'text-slate-300 hover:text-white hover:bg-white/[0.06]'
+              ? 'bg-[#1A1A1E] text-[#FFA05C] border border-[#FF6A00]/40'
+              : 'text-[#A1A1AA] hover:text-[#F5F5F5] hover:bg-[#1A1A1E]'
           }`}
         >
-          <Settings className="w-4 h-4" />
+          <Settings className="w-4 h-4 text-[#71717A]" />
           <span>Settings</span>
         </button>
 
-        {/* Quick Role Switcher for preview ease */}
-        <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] px-2 text-slate-400">
-          <span>Role mode:</span>
-          <button
-            onClick={() => switchRole(isAdmin ? 'student' : 'admin')}
-            className="text-[10px] font-bold text-[#FFA05C] hover:text-white hover:underline"
-          >
-            Switch to {isAdmin ? 'Student' : 'Admin'}
-          </button>
-        </div>
+        <button
+          onClick={logout}
+          className="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 transition-all cursor-pointer"
+        >
+          <LogOut className="w-4 h-4 text-rose-400" />
+          <span>Sign Out</span>
+        </button>
       </div>
     </aside>
   );
 };
 
 export const BottomNav: React.FC = () => {
-  const { currentRoute, navigate } = useApp();
+  const { currentRoute, navigate, isAdmin } = useApp();
 
   const mobileTabs = [
     { label: 'Home', route: '/dashboard', icon: LayoutDashboard },
@@ -175,11 +173,11 @@ export const BottomNav: React.FC = () => {
     { label: 'Past Papers', route: '/past-questions', icon: BookOpen },
     { label: 'AI Tutor', route: '/ai-tutor', icon: Bot },
     { label: 'Progress', route: '/progress', icon: TrendingUp },
-    { label: 'Profile', route: '/profile', icon: User },
+    ...(isAdmin ? [{ label: 'Admin', route: '/admin', icon: Shield }] : [{ label: 'Profile', route: '/profile', icon: User }]),
   ];
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0b0f19]/80 backdrop-blur-2xl border-t border-white/10 px-2 py-1.5 flex items-center justify-around select-none shadow-2xl">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#151518]/95 border-t border-[#27272C] px-2 py-1.5 flex items-center justify-around select-none">
       {mobileTabs.map(tab => {
         const isActive = currentRoute === tab.route || (tab.route !== '/dashboard' && currentRoute.startsWith(tab.route));
         const Icon = tab.icon;
@@ -187,21 +185,14 @@ export const BottomNav: React.FC = () => {
           <button
             key={tab.route}
             onClick={() => navigate(tab.route)}
-            className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all relative ${
-              isActive ? 'text-[#FF7A1A]' : 'text-slate-400 hover:text-white'
+            className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all relative cursor-pointer ${
+              isActive ? 'text-[#FF6A00]' : 'text-[#71717A] hover:text-[#A1A1AA]'
             }`}
           >
-            <div
-              className={`p-1 rounded-lg transition-transform ${
-                isActive ? 'scale-110 bg-[#FF6A00]/20 backdrop-blur-md' : ''
-              }`}
-            >
+            <div className={`p-1 rounded-lg ${isActive ? 'bg-[#FF6A00]/15' : ''}`}>
               <Icon className="w-5 h-5" />
             </div>
             <span className="text-[10px] font-semibold mt-0.5">{tab.label}</span>
-            {isActive && (
-              <span className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-[#FF6A00] shadow-sm shadow-[#FF6A00]" />
-            )}
           </button>
         );
       })}

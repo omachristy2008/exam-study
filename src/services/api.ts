@@ -33,7 +33,7 @@ async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
 
 export const api = {
   // Auth & Profile
-  getMe: () => fetchJSON<User>('/api/auth/me'),
+  getMe: () => fetchJSON<User | null>('/api/auth/me'),
   login: (email: string) => fetchJSON<{ success: boolean; user: User }>('/api/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email }),
@@ -41,6 +41,9 @@ export const api = {
   register: (payload: any) => fetchJSON<{ success: boolean; user: User }>('/api/auth/register', {
     method: 'POST',
     body: JSON.stringify(payload),
+  }),
+  logout: () => fetchJSON<{ success: boolean }>('/api/auth/logout', {
+    method: 'POST',
   }),
   updateProfile: (payload: { profile?: any; name?: string; avatar_url?: string }) =>
     fetchJSON<{ success: boolean; user: User }>('/api/auth/profile', {

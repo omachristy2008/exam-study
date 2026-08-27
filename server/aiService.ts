@@ -344,9 +344,53 @@ export async function generateStudyCoachPlanAI(params: {
   recent_scores: number[];
   target_courses_or_subjects: string[];
 }): Promise<{ summary: string; plan: { id: string; title: string; topic: string; course_or_subject: string; duration_minutes: number; type: 'review' | 'practice' | 'mini_test'; action_label: string; action_url: string; completed: boolean }[] }> {
+  const isNewStudent = params.recent_scores.length === 0 && params.weak_topics.length === 0;
+
+  if (isNewStudent) {
+    const primaryCourse = params.target_courses_or_subjects[0] || 'General Curriculum';
+    return {
+      summary: `Welcome to EXAMAI! You haven't taken any practice exams yet. Take your first practice drill to establish your baseline score and identify personalized study priorities.`,
+      plan: [
+        {
+          id: `plan_init_1`,
+          title: `1. Explore Course & Subject Syllabus`,
+          topic: `Curriculum Orientation`,
+          course_or_subject: primaryCourse,
+          duration_minutes: 10,
+          type: 'review',
+          action_label: 'Browse Library',
+          action_url: `/practice`,
+          completed: false,
+        },
+        {
+          id: `plan_init_2`,
+          title: `2. Complete 10-Question Diagnostic Drill`,
+          topic: `Baseline Knowledge Check`,
+          course_or_subject: primaryCourse,
+          duration_minutes: 15,
+          type: 'practice',
+          action_label: 'Start Practice',
+          action_url: `/practice`,
+          completed: false,
+        },
+        {
+          id: `plan_init_3`,
+          title: `3. Chat with AI Tutor on Core Concepts`,
+          topic: `Theory & Formula Explanations`,
+          course_or_subject: primaryCourse,
+          duration_minutes: 10,
+          type: 'mini_test',
+          action_label: 'Open AI Tutor',
+          action_url: `/ai-tutor`,
+          completed: false,
+        }
+      ]
+    };
+  }
+
   const ai = getGemini();
-  const weakTopicsStr = params.weak_topics.length > 0 ? params.weak_topics.join(', ') : 'Trees & Binary Search Trees, Logarithms & Indices, Asymptotic Big-O';
-  const targetCoursesStr = params.target_courses_or_subjects.join(', ') || 'CSC 201, WAEC Mathematics';
+  const weakTopicsStr = params.weak_topics.length > 0 ? params.weak_topics.join(', ') : 'Foundational Problem Solving';
+  const targetCoursesStr = params.target_courses_or_subjects.join(', ') || 'General Studies';
 
   if (ai) {
     try {

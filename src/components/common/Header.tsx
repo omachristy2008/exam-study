@@ -2,33 +2,31 @@ import React from 'react';
 import {
   Flame,
   Zap,
-  Bell,
-  Sparkles,
   Shield,
   UploadCloud,
   CheckCircle2,
   AlertCircle,
   Info,
+  LogOut,
+  LogIn,
 } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
 import { useApp } from '../../context/AppContext';
 
 export const Header: React.FC = () => {
-  const { user, navigate, switchRole, currentRoute } = useApp();
-
-  const isAdmin = user?.role === 'admin';
+  const { user, navigate, currentRoute, isAdmin, logout } = useApp();
 
   return (
-    <header className="sticky top-0 z-30 bg-white/[0.03] backdrop-blur-2xl border-b border-white/10 px-4 lg:px-8 py-3.5 flex items-center justify-between shadow-lg">
+    <header className="sticky top-0 z-30 bg-[#151518] border-b border-[#27272C] px-4 lg:px-8 py-3.5 flex items-center justify-between shadow-sm">
       {/* Left side on mobile: Brand Logo */}
       <div className="flex items-center gap-3">
         <div className="lg:hidden">
-          <button onClick={() => navigate('/dashboard')}>
+          <button onClick={() => navigate('/dashboard')} className="cursor-pointer">
             <BrandLogo size="sm" />
           </button>
         </div>
-        <div className="hidden lg:flex items-center gap-2 text-sm text-slate-300">
-          <span className="font-semibold text-white">
+        <div className="hidden lg:flex items-center gap-2 text-sm text-[#A1A1AA]">
+          <span className="font-semibold text-[#F5F5F5]">
             {currentRoute === '/dashboard' && 'Dashboard Overview'}
             {currentRoute.startsWith('/practice') && 'Examination Practice Hub'}
             {currentRoute.startsWith('/past-questions') && 'Real Past Questions Library'}
@@ -46,25 +44,27 @@ export const Header: React.FC = () => {
       </div>
 
       {/* Right side: Stats, Quick Action, Role, Profile */}
-      <div className="flex items-center gap-2.5 sm:gap-4">
+      <div className="flex items-center gap-2 sm:gap-3">
         {/* Quick Upload CTA (desktop) */}
-        <button
-          onClick={() => navigate('/upload-question')}
-          className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-xs font-semibold text-[#FFA05C] border border-[#FF6A00]/40 backdrop-blur-md transition-all hover:scale-102"
-        >
-          <UploadCloud className="w-3.5 h-3.5 text-[#FF6A00]" />
-          <span>Upload Paper</span>
-        </button>
+        {user && (
+          <button
+            onClick={() => navigate('/upload-question')}
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1A1A1E] hover:bg-[#202026] text-xs font-semibold text-[#FFA05C] border border-[#FF6A00]/30 transition-all cursor-pointer"
+          >
+            <UploadCloud className="w-3.5 h-3.5 text-[#FF6A00]" />
+            <span>Upload Paper</span>
+          </button>
+        )}
 
         {/* Streak pill */}
         {user && (
           <button
             onClick={() => navigate('/progress')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.09] backdrop-blur-xl border border-white/12 text-xs font-bold text-white hover:border-[#FF6A00]/50 transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1A1A1E] hover:bg-[#202026] border border-[#27272C] text-xs font-bold text-[#F5F5F5] hover:border-[#FF6A00]/40 transition-all cursor-pointer"
           >
             <Flame className="w-4 h-4 text-[#FF6A00] fill-[#FF6A00]" />
             <span>{user.profile.streak_days}</span>
-            <span className="text-[10px] text-slate-400 hidden xs:inline">streak</span>
+            <span className="text-[10px] text-[#71717A] hidden xs:inline">streak</span>
           </button>
         )}
 
@@ -72,35 +72,44 @@ export const Header: React.FC = () => {
         {user && (
           <button
             onClick={() => navigate('/achievements')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.09] backdrop-blur-xl border border-white/12 text-xs font-bold text-[#FFA05C] hover:border-[#FF6A00]/50 transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1A1A1E] hover:bg-[#202026] border border-[#27272C] text-xs font-bold text-[#FFA05C] hover:border-[#FF6A00]/40 transition-all cursor-pointer"
           >
-            <Zap className="w-3.5 h-3.5 text-[#FF7A1A] fill-[#FF7A1A]" />
+            <Zap className="w-3.5 h-3.5 text-[#FF6A00] fill-[#FF6A00]" />
             <span>{user.profile.xp.toLocaleString()}</span>
-            <span className="text-[10px] text-slate-400 hidden xs:inline">XP</span>
+            <span className="text-[10px] text-[#71717A] hidden xs:inline">XP</span>
           </button>
         )}
 
-        {/* Role toggle button */}
-        <button
-          onClick={() => switchRole(isAdmin ? 'student' : 'admin')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border backdrop-blur-md ${
-            isAdmin
-              ? 'bg-purple-900/40 text-purple-200 border-purple-400/40 hover:bg-purple-800/50 shadow-md shadow-purple-950/40'
-              : 'bg-white/[0.05] text-slate-300 border-white/12 hover:bg-white/[0.09] hover:text-white'
-          }`}
-          title="Switch between Student and Admin mode"
-        >
-          <Shield className="w-3.5 h-3.5 text-purple-400" />
-          <span className="hidden sm:inline">{isAdmin ? 'Admin' : 'Student'}</span>
-        </button>
+        {/* Admin Badge & Link: ONLY visible if isAdmin */}
+        {isAdmin && (
+          <button
+            onClick={() => navigate('/admin')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-950/80 text-purple-200 border border-purple-500/30 hover:bg-purple-900/60 transition-all cursor-pointer"
+            title="Administrator Space (omachristy4@gmail.com)"
+          >
+            <Shield className="w-3.5 h-3.5 text-purple-400" />
+            <span className="hidden sm:inline">Admin Space</span>
+          </button>
+        )}
 
         {/* User avatar / profile button */}
-        {user && (
+        {user ? (
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => navigate('/profile')}
+              className="w-8 h-8 rounded-xl bg-[#FF6A00] text-white flex items-center justify-center font-bold text-xs cursor-pointer hover:opacity-90 transition-opacity"
+              title={`${user.name} (${user.email})`}
+            >
+              {user.name.charAt(0)}
+            </button>
+          </div>
+        ) : (
           <button
-            onClick={() => navigate('/profile')}
-            className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#FF6A00] to-[#FF8A3D] text-white flex items-center justify-center font-bold text-xs shadow-lg shadow-[#FF6A00]/30 hover:scale-105 transition-transform border border-white/20"
+            onClick={() => navigate('/login')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FF6A00] hover:bg-[#FF7A1A] text-white text-xs font-bold cursor-pointer"
           >
-            {user.name.charAt(0)}
+            <LogIn className="w-3.5 h-3.5" />
+            <span>Sign In</span>
           </button>
         )}
       </div>
@@ -122,12 +131,12 @@ export const ToastContainer: React.FC = () => {
         return (
           <div
             key={toast.id}
-            className={`pointer-events-auto p-4 rounded-2xl border backdrop-blur-2xl shadow-2xl flex items-start gap-3 text-sm font-medium animate-in slide-in-from-right duration-200 ${
+            className={`pointer-events-auto p-3.5 rounded-2xl border shadow-xl flex items-start gap-3 text-xs font-medium animate-in slide-in-from-right duration-200 ${
               isSuccess
-                ? 'bg-emerald-950/80 text-emerald-100 border-emerald-500/40 shadow-emerald-950/50'
+                ? 'bg-[#151518] text-emerald-300 border-emerald-500/40'
                 : isError
-                ? 'bg-rose-950/80 text-rose-100 border-rose-500/40 shadow-rose-950/50'
-                : 'bg-slate-900/80 text-white border-white/20 shadow-black/50'
+                ? 'bg-[#151518] text-rose-300 border-rose-500/40'
+                : 'bg-[#151518] text-[#F5F5F5] border-[#27272C]'
             }`}
           >
             {isSuccess ? (
@@ -135,7 +144,7 @@ export const ToastContainer: React.FC = () => {
             ) : isError ? (
               <AlertCircle className="w-4 h-4 text-rose-400 mt-0.5 flex-shrink-0" />
             ) : (
-              <Info className="w-4 h-4 text-[#FF7A1A] mt-0.5 flex-shrink-0" />
+              <Info className="w-4 h-4 text-[#FF6A00] mt-0.5 flex-shrink-0" />
             )}
             <p className="flex-1 text-xs leading-relaxed">{toast.message}</p>
           </div>

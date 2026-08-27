@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Award,
   CheckCircle2,
@@ -11,13 +11,18 @@ import {
   ChevronRight,
   Flame,
   ShieldCheck,
+  FileDown,
+  Check,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { ExamResult } from '../../types';
 import { VerificationBadge } from '../common/VerificationBadge';
+import { exportExamResultPDF } from '../../utils/pdfExport';
 
 export const ExamResultsView: React.FC = () => {
-  const { latestResult, routeParams, navigate, startExamSession } = useApp();
+  const { user, latestResult, routeParams, navigate, startExamSession } = useApp();
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
+  const [pdfDownloaded, setPdfDownloaded] = useState(false);
 
   const result: ExamResult | undefined = routeParams.result || latestResult;
 
@@ -40,7 +45,7 @@ export const ExamResultsView: React.FC = () => {
 
   const minutesUsed = Math.floor(result.time_used_seconds / 60);
   const secondsUsed = result.time_used_seconds % 60;
-  const avgSecondsPerQ = Math.round(result.time_used_seconds / result.total_questions);
+  const avgSecondsPerQ = Math.round(result.time_used_seconds / Math.max(1, result.total_questions));
 
   // Retake exam
   const handleRetakeExam = () => {
@@ -70,6 +75,23 @@ export const ExamResultsView: React.FC = () => {
     });
   };
 
+  // PDF Export
+  const handleDownloadPDF = () => {
+    setDownloadingPDF(true);
+    try {
+      exportExamResultPDF({
+        result,
+        user,
+      });
+      setPdfDownloaded(true);
+      setTimeout(() => setPdfDownloaded(false), 4000);
+    } catch (err) {
+      console.error('Failed to export PDF:', err);
+    } finally {
+      setDownloadingPDF(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-16">
       {/* Top Banner Card: Score & Performance */}
@@ -84,6 +106,23 @@ export const ExamResultsView: React.FC = () => {
                 EXAM RESULT
               </span>
               <VerificationBadge sourceType={result.source_type} size="sm" />
+              <button
+                onClick={handleDownloadPDF}
+                disabled={downloadingPDF}
+                className="px-3 py-1 rounded-full bg-white/[0.08] hover:bg-[#FF6A00]/25 text-[#FFA05C] hover:text-white font-bold text-xs border border-white/10 hover:border-[#FF6A00]/40 flex items-center gap-1.5 transition-all cursor-pointer backdrop-blur-sm ml-auto"
+              >
+                {pdfDownloaded ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Report Saved!</span>
+                  </>
+                ) : (
+                  <>
+                    <FileDown className="w-3.5 h-3.5" />
+                    <span>{downloadingPDF ? 'Generating...' : 'Export PDF'}</span>
+                  </>
+                )}
+              </button>
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
@@ -193,13 +232,31 @@ export const ExamResultsView: React.FC = () => {
       </div>
 
       {/* Action Buttons */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <button
           onClick={() => navigate(`/exam/${result.id}/review`, { result })}
           className="p-4 rounded-2xl bg-white/[0.05] hover:bg-white/[0.09] border border-white/12 hover:border-white/25 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg backdrop-blur-md"
         >
           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span>Review All Answers & Explanations</span>
+          <span>Review All Answers</span>
+        </button>
+
+        <button
+          onClick={handleDownloadPDF}
+          disabled={downloadingPDF}
+          className="p-4 rounded-2xl bg-white/[0.05] hover:bg-white/[0.09] border border-white/12 hover:border-[#FF6A00]/40 text-[#FFA05C] hover:text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg backdrop-blur-md"
+        >
+          {pdfDownloaded ? (
+            <>
+              <Check className="w-4 h-4 text-emerald-400" />
+              <span>PDF Saved!</span>
+            </>
+          ) : (
+            <>
+              <FileDown className="w-4 h-4" />
+              <span>{downloadingPDF ? 'Generating PDF...' : 'Download PDF Report'}</span>
+            </>
+          )}
         </button>
 
         <button
@@ -207,7 +264,7 @@ export const ExamResultsView: React.FC = () => {
           className="p-4 rounded-2xl bg-gradient-to-r from-[#FF6A00] to-[#FF7A1A] hover:from-[#FF7A1A] hover:to-[#FF8A3D] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#FF6A00]/25 hover:scale-101 cursor-pointer border border-white/20"
         >
           <Sparkles className="w-4 h-4" />
-          <span>Practice Weak Areas Drill</span>
+          <span>Practice Weak Areas</span>
         </button>
 
         <button

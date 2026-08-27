@@ -35,10 +35,10 @@ export const ProfileView: React.FC = () => {
   const [customDepartment, setCustomDepartment] = useState<string>(user?.profile.custom_department_name || '');
   const [level, setLevel] = useState<string>(user?.profile.level || '200');
   const [selectedCourses, setSelectedCourses] = useState<string[]>(
-    user?.profile.selected_courses || ['CSC 201', 'CSC 205', 'MTH 201']
+    user?.profile.selected_courses || []
   );
   const [selectedWaecSubjects, setSelectedWaecSubjects] = useState<string[]>(
-    user?.profile.selected_waec_subjects || ['Mathematics', 'English Language', 'Physics']
+    user?.profile.selected_waec_subjects || []
   );
   const [newCourseCode, setNewCourseCode] = useState('');
 

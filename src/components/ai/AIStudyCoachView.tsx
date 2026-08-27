@@ -29,12 +29,23 @@ export const AIStudyCoachView: React.FC = () => {
     setLoading(true);
     try {
       const resp = await api.getStudyCoachPlan({
-        weak_topics: ['Trees & Binary Search Trees', 'Trigonometry & Bearings', 'Big-O Analysis'],
-        target_courses: user?.profile.selected_courses || ['CSC 201', 'WAEC Mathematics'],
+        weak_topics: [],
+        target_courses: user?.profile.selected_courses || [],
       });
 
       setPlanSummary(resp.summary);
-      setDailyPlan(resp.plan);
+      if (resp.plan && resp.plan.length > 0) {
+        setDailyPlan(
+          resp.plan.map((p, idx) => ({
+            step: idx + 1,
+            title: p.title,
+            duration_minutes: p.duration_minutes,
+            description: `Focus on ${p.topic} in ${p.course_or_subject}. Target duration: ${p.duration_minutes} minutes.`,
+            action_label: p.action_label || 'Start',
+            action_type: p.type === 'mini_test' ? 'ai_tutor' : 'ai_drill',
+          }))
+        );
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -79,7 +90,7 @@ export const AIStudyCoachView: React.FC = () => {
 
         <p className="relative z-10 text-sm text-slate-200 leading-relaxed max-w-3xl">
           {planSummary ||
-            `Student is showing steady 78% mastery in foundational CSC 201 concepts but experiencing recurring score drops in Tree Balance Rotations (58% accuracy) and WAEC Trigonometry Bearings (62% accuracy). Today's recommended target is 45 minutes of focused conceptual review followed by targeted question drilling.`}
+            `Welcome to your AI Study Coach! Complete your first practice drill or past questions test to generate dynamic real-time diagnostics and personalized daily study milestones.`}
         </p>
 
         <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
@@ -87,7 +98,7 @@ export const AIStudyCoachView: React.FC = () => {
             <div className="text-xs text-slate-400 font-medium">Daily Streak</div>
             <div className="text-lg font-black text-white flex items-center gap-1.5">
               <Flame className="w-4 h-4 text-[#FF6A00] fill-[#FF6A00]" />
-              <span>{user?.profile.streak_days || 5} Days Active</span>
+              <span>{user?.profile.streak_days || 0} Days Active</span>
             </div>
           </div>
 
@@ -95,7 +106,7 @@ export const AIStudyCoachView: React.FC = () => {
             <div className="text-xs text-slate-400 font-medium">Target Session Length</div>
             <div className="text-lg font-black text-white flex items-center gap-1.5">
               <Clock className="w-4 h-4 text-[#FFA05C]" />
-              <span>45 Minutes</span>
+              <span>35 Minutes</span>
             </div>
           </div>
 
@@ -103,7 +114,11 @@ export const AIStudyCoachView: React.FC = () => {
             <div className="text-xs text-slate-400 font-medium">Predicted Exam Readiness</div>
             <div className="text-lg font-black text-emerald-400 flex items-center gap-1.5">
               <TrendingUp className="w-4 h-4" />
-              <span>82% (Strong B)</span>
+              <span>
+                {user?.profile.total_tests_completed && user.profile.overall_mastery_percentage
+                  ? `${user.profile.overall_mastery_percentage}%`
+                  : 'Pending First Test'}
+              </span>
             </div>
           </div>
         </div>

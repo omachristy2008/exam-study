@@ -12,6 +12,10 @@ interface ToastMessage {
 interface AppContextType {
   user: User | null;
   loadingUser: boolean;
+  isAdmin: boolean;
+  login: (email: string, password?: string) => Promise<boolean>;
+  register: (payload: any) => Promise<boolean>;
+  logout: () => void;
   currentRoute: string;
   routeParams: Record<string, any>;
   navigate: (route: string, params?: Record<string, any>) => void;
@@ -42,6 +46,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [latestResult, setLatestResult] = useState<ExamResult | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
+  // Strict Admin authorization check: ONLY omachristy4@gmail.com is authorized to view or manage the admin space
+  const isAdmin = !!user && (user.email.toLowerCase() === 'omachristy4@gmail.com' || (user.role === 'admin' && user.email.toLowerCase() === 'omachristy4@gmail.com'));
+
   // Load initial user session
   const refreshUser = async () => {
     try {
@@ -49,6 +56,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setUser(data);
     } catch (e) {
       console.error('Failed to load user:', e);
+      setUser(null);
     } finally {
       setLoadingUser(false);
     }
@@ -57,6 +65,45 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     refreshUser();
   }, []);
+
+  const login = async (email: string, password?: string): Promise<boolean> => {
+    try {
+      const resp = await api.login(email);
+      if (resp.success && resp.user) {
+        setUser(resp.user);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Login error:', err);
+      return false;
+    }
+  };
+
+  const register = async (payload: any): Promise<boolean> => {
+    try {
+      const resp = await api.register(payload);
+      if (resp.success && resp.user) {
+        setUser(resp.user);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Register error:', err);
+      return false;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await api.logout();
+    } catch {
+      // Ignore
+    }
+    setUser(null);
+    showToast('Signed out successfully.', 'info');
+    navigate('/login');
+  };
 
   const navigate = (route: string, params: Record<string, any> = {}) => {
     setCurrentRoute(route);
@@ -86,6 +133,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const switchRole = async (role: 'student' | 'admin') => {
+    if (!isAdmin && user?.email.toLowerCase() !== 'omachristy4@gmail.com') {
+      showToast('Access restricted: Only authorized platform administrators can toggle roles.', 'error');
+      return;
+    }
     try {
       const updated = await api.switchUserRole(role);
       setUser(updated);
@@ -196,6 +247,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       value={{
         user,
         loadingUser,
+        isAdmin,
+        login,
+        register,
+        logout,
         currentRoute,
         routeParams,
         navigate,
