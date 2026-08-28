@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import Markdown from 'react-markdown';
 import {
   Bot,
   Send,
@@ -82,7 +83,7 @@ export const AITutorView: React.FC = () => {
   const startListening = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      showToast('Speech recognition is not supported in this browser. Please type your query.', 'warning');
+      showToast('Speech recognition is not supported in this browser. Please type your query.', 'info');
       return;
     }
 
@@ -130,7 +131,7 @@ export const AITutorView: React.FC = () => {
         } else if (event.error === 'no-speech') {
           // No speech detected, silently keep listening or standby
         } else {
-          showToast(`Microphone notification: ${event.error}`, 'warning');
+          showToast(`Microphone notification: ${event.error}`, 'info');
         }
         setIsListening(false);
         setInterimTranscript('');
@@ -305,7 +306,9 @@ export const AITutorView: React.FC = () => {
                     : 'bg-gradient-to-r from-[#FF6A00] to-[#FF7A1A] text-white font-medium rounded-tr-sm shadow-lg shadow-[#FF6A00]/20 border border-white/20'
                 }`}
               >
-                <div className="whitespace-pre-line leading-relaxed font-sans">{msg.content}</div>
+                <div className="leading-relaxed font-sans prose prose-invert max-w-none text-xs sm:text-sm">
+                  <Markdown>{msg.content}</Markdown>
+                </div>
                 <div
                   className={`text-[10px] ${
                     isAI ? 'text-[#71717A]' : 'text-white/80'

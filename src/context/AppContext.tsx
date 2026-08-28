@@ -20,7 +20,7 @@ interface AppContextType {
   routeParams: Record<string, any>;
   navigate: (route: string, params?: Record<string, any>) => void;
   activeExam: ExamSession | null;
-  startExamSession: (session: Omit<ExamSession, 'id' | 'status' | 'user_answers' | 'flagged_questions' | 'time_remaining_seconds'>) => void;
+  startExamSession: (session: Omit<ExamSession, 'id' | 'status' | 'user_answers' | 'flagged_questions' | 'time_remaining_seconds' | 'user_id' | 'started_at'> & { user_id?: string; started_at?: string }) => void;
   updateExamAnswer: (questionId: string, optionId: string) => void;
   toggleFlagQuestion: (questionId: string) => void;
   finishExamSession: (timeUsedSeconds?: number) => Promise<ExamResult | null>;
@@ -205,10 +205,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   // Exam engine management
-  const startExamSession = (sessionData: Omit<ExamSession, 'id' | 'status' | 'user_answers' | 'flagged_questions' | 'time_remaining_seconds'>) => {
+  const startExamSession = (sessionData: Omit<ExamSession, 'id' | 'status' | 'user_answers' | 'flagged_questions' | 'time_remaining_seconds' | 'user_id' | 'started_at'> & { user_id?: string; started_at?: string }) => {
     const newSession: ExamSession = {
       ...sessionData,
       id: `exam_${Date.now()}`,
+      user_id: sessionData.user_id || user?.id || `guest_${Date.now()}`,
+      started_at: sessionData.started_at || new Date().toISOString(),
       status: 'in_progress',
       user_answers: {},
       flagged_questions: [],

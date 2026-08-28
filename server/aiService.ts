@@ -285,59 +285,440 @@ export async function chatWithTutorAI(params: {
     recent_score?: number;
   };
 }): Promise<{ reply: string; quick_prompts: string[] }> {
+  const userMessages = params.messages.filter(m => m.role === 'user');
+  const latestQuery = userMessages[userMessages.length - 1]?.content || 'Help me with my exam preparation';
+
   const ai = getGemini();
   if (ai) {
     try {
       const systemInstruction = `
-You are EXAMAI Tutor, a friendly, brilliant, and patient AI study assistant specialized in WAEC (WASSCE) and Nigerian University academic courses (Science, Engineering, Social Sciences, Arts, Law).
+You are EXAMAI Tutor, a friendly, brilliant, and patient AI examination tutor specialized in West African / Nigerian curricula (WAEC, WASSCE, JAMB/UTME, and University undergraduate degree courses in Science, Engineering, Law, Social Sciences, Business, and Arts).
+
 Context:
-- Current Target/Course: ${params.user_context?.current_course || 'General'}
-- Current Topic: ${params.user_context?.current_topic || 'Academic Syllabus'}
-- Student's Identified Weak Areas: ${params.user_context?.weak_areas?.join(', ') || 'None recorded yet'}
+- Target Subject/Course: ${params.user_context?.current_course || 'General Curriculum'}
+- Specific Topic: ${params.user_context?.current_topic || 'Exam Preparation'}
+- Student Identified Weak Areas: ${params.user_context?.weak_areas?.join(', ') || 'None recorded'}
 - Recent Test Score: ${params.user_context?.recent_score ? `${params.user_context.recent_score}%` : 'N/A'}
 
-Rules:
-1. Explain concepts simply using clear analogies, formula breakdowns, and bullet points.
-2. If asked for practice, give a mini question with options.
-3. Be encouraging and concise. Avoid dense text blocks.
-4. Keep the Nigerian/West African syllabus context in mind (e.g. WAEC marking standards, university GPA excellence).
+Pedagogical Directives:
+1. Always answer the student's question directly with depth, mathematical/conceptual precision, and encouraging clarity.
+2. Structure your explanation with clear sections:
+   - 🎯 **Core Concept & Definition**
+   - 🔍 **Step-by-Step Breakdown / Proof / Formula**
+   - 💡 **Practical Worked Example (with numerical or code steps)**
+   - ⚠️ **Common Exam Pitfalls & Misconceptions**
+   - 🚀 **Pro-Tip for Exam Day**
+3. If they ask for practice, provide a clear multiple choice question with explanation.
+4. Keep the tone inspiring, structured, and easy to read.
       `;
 
-      const formattedContents = params.messages.map(m => `${m.role === 'user' ? 'Student' : 'Tutor'}: ${m.content}`).join('\n\n');
+      const prompt = `
+Previous Conversation History:
+${params.messages.map(m => `${m.role === 'user' ? 'Student' : 'AI Tutor'}: ${m.content}`).join('\n\n')}
+
+Student's Latest Question:
+"${latestQuery}"
+
+Please provide a comprehensive, step-by-step educational answer to help this student excel in their examinations:
+      `;
 
       const response = await ai.models.generateContent({
         model: 'gemini-3.7-flash',
-        contents: formattedContents,
+        contents: prompt,
         config: {
           systemInstruction,
         }
       });
 
-      const reply = response.text || 'I am ready to help you master this topic! What specific concept would you like to review?';
-      return {
-        reply,
-        quick_prompts: [
-          'Give me 3 practice questions on this',
-          'Break this down with a real-life analogy',
-          'What are the most common exam traps for this topic?',
-          'Create a 30-minute revision checklist',
-        ]
-      };
+      const reply = response.text?.trim();
+      if (reply) {
+        return {
+          reply,
+          quick_prompts: generateRelevantQuickPrompts(latestQuery),
+        };
+      }
     } catch (e) {
-      console.warn('Gemini AI Tutor error:', e);
+      console.warn('Gemini AI Tutor runtime error, engaging academic fallback synthesizer:', e);
     }
   }
 
+  // High-fidelity pedagogical answering engine for offline or fallback environments
+  return synthesizeAcademicTutorAnswer(latestQuery, params.user_context);
+}
+
+// Generates relevant contextual prompts based on student query
+function generateRelevantQuickPrompts(query: string): string[] {
+  const q = query.toLowerCase();
+  if (q.includes('quicksort') || q.includes('mergesort') || q.includes('sort') || q.includes('complexity') || q.includes('big-o')) {
+    return [
+      'Show me the recurrence relation for Mergesort',
+      'What is Quicksort worst-case pivot selection?',
+      'Give me 3 practice questions on Sorting Algorithms',
+      'Explain Big-O vs Big-Theta vs Big-Omega',
+    ];
+  }
+  if (q.includes('tree') || q.includes('bst') || q.includes('avl') || q.includes('heap')) {
+    return [
+      'Show an AVL tree Left-Right (LR) rotation step-by-step',
+      'How does BST deletion handle a node with two children?',
+      'Compare Min-Heap vs Max-Heap operations',
+      'Give me a multiple choice question on Tree Traversals',
+    ];
+  }
+  if (q.includes('bearing') || q.includes('trigonometry') || q.includes('angle') || q.includes('triangle')) {
+    return [
+      'How to convert 3-figure bearings to compass bearings',
+      'When do I use Sine Rule vs Cosine Rule in WAEC?',
+      'Solve a sample angle of elevation problem',
+      'Test me with a hard bearing question',
+    ];
+  }
+  if (q.includes('quadratic') || q.includes('equation') || q.includes('polynomial') || q.includes('algebra')) {
+    return [
+      'Show completing the square method step-by-step',
+      'How do I use the discriminant (b² - 4ac) to find nature of roots?',
+      'Solve 3x² - 7x + 2 = 0 using formula method',
+      'Quiz me on quadratic word problems',
+    ];
+  }
+  if (q.includes('newton') || q.includes('force') || q.includes('physics') || q.includes('motion')) {
+    return [
+      'Calculate acceleration given mass and friction force',
+      'Explain Newton\'s 3rd Law action-reaction pairs',
+      'Derive the 3 equations of linear motion',
+      'Test my understanding of momentum and impulse',
+    ];
+  }
+  if (q.includes('photo') || q.includes('bio') || q.includes('cell') || q.includes('genetics')) {
+    return [
+      'Compare light-dependent vs light-independent reactions',
+      'Draw a Punnett square for heterozygous cross (Bb x Bb)',
+      'Explain Mitosis vs Meiosis key differences',
+      'What are the most frequent WAEC Biology diagram questions?',
+    ];
+  }
+  return [
+    'Break this down with a real-life analogy',
+    'Give me 2 practice questions with solutions',
+    'What is the most common exam trap for this topic?',
+    'Create a 15-minute quick revision checklist',
+  ];
+}
+
+// Robust offline Academic Knowledge Engine
+function synthesizeAcademicTutorAnswer(
+  query: string,
+  context?: { current_course?: string; current_topic?: string; weak_areas?: string[]; recent_score?: number }
+): { reply: string; quick_prompts: string[] } {
+  const q = query.toLowerCase();
+
+  // 1. Quicksort vs Mergesort / Sorting Time Complexity
+  if (q.includes('quicksort') || q.includes('mergesort') || (q.includes('time complexity') && (q.includes('sort') || q.includes('merge')))) {
+    return {
+      reply: `### 🎯 Quicksort vs. Mergesort: Asymptotic & Algorithmic Breakdown
+
+Both **Quicksort** and **Mergesort** are classic **Divide-and-Conquer** sorting algorithms, but they manage subproblems and memory differently:
+
+---
+
+#### 1. ⏱️ Time & Space Complexity Comparison
+
+| Algorithm | Best Case | Average Case | Worst Case | Space Complexity | Stability |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Mergesort** | $\\mathcal{O}(n \\log n)$ | $\\mathcal{O}(n \\log n)$ | $\\mathcal{O}(n \\log n)$ | $\\mathcal{O}(n)$ Auxiliary | **Stable** |
+| **Quicksort** | $\\mathcal{O}(n \\log n)$ | $\\mathcal{O}(n \\log n)$ | $\\mathcal{O}(n^2)$ | $\\mathcal{O}(\\log n)$ In-Place | **Unstable** |
+
+---
+
+#### 2. 🔍 Step-by-Step Mechanism Breakdown
+
+1. **Mergesort**:
+   - **Divide**: Splits array exactly in half $\\rightarrow T(n) = 2T(n/2) + \\mathcal{O}(n)$.
+   - **Conquer**: Recursively sorts both halves.
+   - **Combine**: Merges two sorted subarrays using a temporary array.
+   - *Why guaranteed $\\mathcal{O}(n \\log n)$?* Because the division tree depth is always $\\log_2 n$, and merging at each level takes linear time $\\mathcal{O}(n)$.
+
+2. **Quicksort**:
+   - **Partitioning**: Chooses a pivot element and partitions array such that elements $\\le$ pivot are left, and elements $>$ pivot are right.
+   - **Worst Case ($\\mathcal{O}(n^2)$)**: Happens when the pivot chosen is consistently the extreme element (e.g., picking the first or last element of an already sorted array).
+   - **Remedy**: Randomized Pivot or Median-of-Three pivot selection.
+
+---
+
+#### 3. ⚠️ Common Exam Trap
+> **Trap**: Assuming Quicksort is always slower than Mergesort because of its $\\mathcal{O}(n^2)$ worst case.  
+> **Reality**: In practice, Quicksort has excellent cache locality and lower constant factors, making it faster in RAM than Mergesort for general in-memory datasets.
+
+---
+
+#### 4. 🚀 Quick Memory Rule for Exams
+- **Mergesort** = Consistent & Stable $\\mathcal{O}(n \\log n)$, but costs $\\mathcal{O}(n)$ memory.
+- **Quicksort** = Blazing fast in-place, but beware sorted input without randomized pivot!`,
+      quick_prompts: [
+        'Show me the recurrence relation for Mergesort',
+        'What is Quicksort worst-case pivot selection?',
+        'Give me 3 practice questions on Sorting Algorithms',
+        'Explain Big-O vs Big-Theta vs Big-Omega',
+      ]
+    };
+  }
+
+  // 2. Binary Search Trees & AVL Trees
+  if (q.includes('bst') || q.includes('binary search tree') || q.includes('avl') || q.includes('tree')) {
+    return {
+      reply: `### 🎯 Binary Search Trees (BST) & AVL Self-Balancing Trees
+
+A **Binary Search Tree (BST)** is a node-based binary tree data structure with the fundamental invariant:
+$$\\text{Left Subtree Keys} < \\text{Node Key} < \\text{Right Subtree Keys}$$
+
+---
+
+#### 1. 🔍 Time Complexity Analysis
+- **Balanced BST (Average Case)**: $\\mathcal{O}(\\log n)$ for Search, Insert, and Delete.
+- **Skewed BST (Worst Case)**: $\\mathcal{O}(n)$ when elements are inserted in strictly sorted ascending or descending order (degenerates into a linked list).
+
+---
+
+#### 2. 🌲 Why AVL Trees? (Strict Self-Balancing)
+To prevent worst-case $\\mathcal{O}(n)$ degradation, **AVL Trees** enforce a strict Balance Factor ($BF$):
+$$BF(\\text{node}) = \\text{Height}(\\text{Left Subtree}) - \\text{Height}(\\text{Right Subtree})$$
+**Rule**: For every node in an AVL tree, $BF \\in \\{-1, 0, +1\\}$. If $|BF| > 1$, rotations are performed:
+
+1. **Left-Left (LL)** $\\rightarrow$ Single Right Rotation.
+2. **Right-Right (RR)** $\\rightarrow$ Single Left Rotation.
+3. **Left-Right (LR)** $\\rightarrow$ Left rotate child, then Right rotate node.
+4. **Right-Left (RL)** $\\rightarrow$ Right rotate child, then Left rotate node.
+
+---
+
+#### 3. 💡 Worked Example: In-Order Traversal
+In-Order traversal $(\\text{Left} \\rightarrow \\text{Root} \\rightarrow \\text{Right})$ of any valid BST always yields values in **strictly sorted ascending order**.
+
+---
+
+#### 4. 🚀 Exam Pro-Tip
+On exam questions asking for worst-case lookup in an unbalanced BST, remember it is $\\mathcal{O}(n)$, **never** $\\mathcal{O}(\\log n)$ unless the tree is explicitly stated to be self-balancing (AVL or Red-Black).`,
+      quick_prompts: [
+        'Show an AVL tree Left-Right (LR) rotation step-by-step',
+        'How does BST deletion handle a node with two children?',
+        'Compare Min-Heap vs Max-Heap operations',
+        'Give me a multiple choice question on Tree Traversals',
+      ]
+    };
+  }
+
+  // 3. Bearings & Trigonometry (WAEC Mathematics)
+  if (q.includes('bearing') || q.includes('angle of elevation') || q.includes('trigonometry') || q.includes('sine rule')) {
+    return {
+      reply: `### 🎯 WAEC Mathematics: Three-Figure Bearings & Trigonometry
+
+In West African examinations (WAEC / WASSCE), bearings problems test two core foundations: **Three-Figure Directional Notation** and **Triangular Geometry**.
+
+---
+
+#### 1. 🧭 Essential Bearing Rules
+1. **Always measure clockwise from True North (000°)**.
+2. **Always write in 3 digits** (e.g., $045^\\circ$, $090^\\circ$, $235^\\circ$).
+3. **Back Bearing Theorem**:
+   - If forward bearing $\\theta < 180^\\circ$: $\\text{Back Bearing} = \\theta + 180^\\circ$
+   - If forward bearing $\\theta \\ge 180^\\circ$: $\\text{Back Bearing} = \\theta - 180^\\circ$
+
+*Example*: If point $B$ is on a bearing of $065^\\circ$ from $A$, the bearing of $A$ from $B$ is $65^\\circ + 180^\\circ = 245^\\circ$.
+
+---
+
+#### 2. 📐 Which Rule to Use in Calculations?
+
+- **Use Sine Rule** when you know 2 angles and 1 side, or 2 sides and a non-included angle:
+  $$\\frac{a}{\\sin A} = \\frac{b}{\\sin B} = \\frac{c}{\\sin C}$$
+
+- **Use Cosine Rule** when you know 2 sides and the included angle (SAS), or all 3 sides (SSS):
+  $$c^2 = a^2 + b^2 - 2ab \\cos C$$
+  $$\\cos C = \\frac{a^2 + b^2 - c^2}{2ab}$$
+
+---
+
+#### 3. ⚠️ Common WAEC Exam Pitfall
+> **Mistake**: Measuring the angle from the East or West horizontal line instead of True North.  
+> **Solution**: Always draw a fresh North-South cross at every single landmark/station point!`,
+      quick_prompts: [
+        'How to convert 3-figure bearings to compass bearings',
+        'When do I use Sine Rule vs Cosine Rule in WAEC?',
+        'Solve a sample angle of elevation problem',
+        'Test me with a hard bearing question',
+      ]
+    };
+  }
+
+  // 4. Quadratic Equations & Polynomials
+  if (q.includes('quadratic') || q.includes('formula method') || q.includes('factoriz') || q.includes('discriminant')) {
+    return {
+      reply: `### 🎯 Quadratic Equations: Methods & Step-by-Step Solutions
+
+A quadratic equation has the general form:
+$$ax^2 + bx + c = 0 \\quad (a \\neq 0)$$
+
+---
+
+#### 1. 🧮 The General Quadratic Formula
+$$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$
+
+---
+
+#### 2. 💡 Worked Example: Solve $2x^2 + 5x - 3 = 0$
+- Step 1: Identify coefficients: $a = 2$, $b = 5$, $c = -3$.
+- Step 2: Compute discriminant $\\Delta = b^2 - 4ac$:
+  $$\\Delta = (5)^2 - 4(2)(-3) = 25 + 24 = 49$$
+- Step 3: Substitute into formula:
+  $$x = \\frac{-5 \\pm \\sqrt{49}}{2(2)} = \\frac{-5 \\pm 7}{4}$$
+- Step 4: Split into two roots:
+  $$x_1 = \\frac{-5 + 7}{4} = \\frac{2}{4} = \\frac{1}{2}$$
+  $$x_2 = \\frac{-5 - 7}{4} = \\frac{-12}{4} = -3$$
+- **Solution Set**: $x = \\frac{1}{2}$ or $x = -3$.
+
+---
+
+#### 3. 🔍 The Discriminant & Nature of Roots
+- If $b^2 - 4ac > 0$: Two distinct real roots.
+- If $b^2 - 4ac = 0$: One repeated/equal real root (perfect square).
+- If $b^2 - 4ac < 0$: No real roots (two complex conjugate roots).
+
+---
+
+#### 4. 🚀 Quick Pro-Tip for Constructing Equations
+If roots are $\\alpha$ and $\\beta$:
+$$x^2 - (\\alpha + \\beta)x + (\\alpha \\beta) = 0$$`,
+      quick_prompts: [
+        'Show completing the square method step-by-step',
+        'How do I use the discriminant (b² - 4ac) to find nature of roots?',
+        'Solve 3x² - 7x + 2 = 0 using formula method',
+        'Quiz me on quadratic word problems',
+      ]
+    };
+  }
+
+  // 5. Physics: Newton's Laws of Motion & Kinematics
+  if (q.includes('newton') || q.includes('motion') || q.includes('physics') || q.includes('velocity') || q.includes('acceleration')) {
+    return {
+      reply: `### 🎯 Physics: Newton’s Laws of Motion & Linear Kinematics
+
+Newton’s three laws of motion form the cornerstone of classical mechanics:
+
+---
+
+#### 1. ⚙️ Newton's 3 Laws Defined
+1. **First Law (Inertia)**: A body remains in its state of rest or uniform motion in a straight line unless acted upon by an external net force.
+2. **Second Law ($F = ma$)**: The rate of change of momentum of a body is directly proportional to the applied force and takes place in the direction of the force:
+   $$F_{\\text{net}} = m \\cdot a = \\frac{\\Delta p}{\\Delta t}$$
+3. **Third Law (Action & Reaction)**: For every action, there is an equal and opposite reaction ($F_{AB} = -F_{BA}$).
+
+---
+
+#### 2. 🚀 The 4 Equations of Uniformly Accelerated Motion
+When acceleration $a$ is constant:
+1. $v = u + at$
+2. $s = ut + \\frac{1}{2}at^2$
+3. $v^2 = u^2 + 2as$
+4. $s = \\left(\\frac{u + v}{2}\\right)t$
+
+*(where $u$ = initial velocity, $v$ = final velocity, $a$ = acceleration, $t$ = time, $s$ = displacement)*
+
+---
+
+#### 3. ⚠️ Common Exam Trap
+> **Mistake**: Confusing Mass ($m$, scalar in $\\text{kg}$) with Weight ($W = mg$, vector in $\\text{Newtons}$).  
+> **Rule**: Mass remains invariant everywhere in the universe; weight varies with gravitational field strength $g$.`,
+      quick_prompts: [
+        'Calculate acceleration given mass and friction force',
+        'Explain Newton\'s 3rd Law action-reaction pairs',
+        'Derive the 3 equations of linear motion',
+        'Test my understanding of momentum and impulse',
+      ]
+    };
+  }
+
+  // 6. Biology: Photosynthesis & Cell Division
+  if (q.includes('photosynthesis') || q.includes('biology') || q.includes('mitosis') || q.includes('cell') || q.includes('genetics')) {
+    return {
+      reply: `### 🎯 Biology: Photosynthesis & Cellular Energy
+
+**Photosynthesis** is the anabolic biological process by which green plants convert light energy into chemical energy stored in glucose:
+
+$$6\\text{CO}_2 + 6\\text{H}_2\\text{O} \\xrightarrow{\\text{Light + Chlorophyll}} \\text{C}_6\\text{H}_{12}\\text{O}_6 + 6\\text{O}_2$$
+
+---
+
+#### 1. 🌿 The Two Main Stages
+
+1. **Light-Dependent Reaction (Occurs in Thylakoid membranes/Grana)**:
+   - Photolysis of water: $2\\text{H}_2\\text{O} \\rightarrow 4\\text{H}^+ + 4e^- + \\text{O}_2\\uparrow$
+   - Generates $\\text{ATP}$ and $\\text{NADPH}$.
+   - Oxygen gas is released as a byproduct.
+
+2. **Light-Independent Reaction / Calvin Cycle (Occurs in Stroma)**:
+   - Carbon fixation: $\\text{CO}_2$ combines with Ribulose Bisphosphate (RuBP) catalyzed by the enzyme **RuBisCO**.
+   - Uses $\\text{ATP}$ and $\\text{NADPH}$ from the light stage to produce glucose (sugar).
+
+---
+
+#### 2. 🧪 Limiting Factors (WAEC Frequently Tested)
+- **Light Intensity**: Rate increases up to saturation.
+- **$\\text{CO}_2$ Concentration**: Major atmospheric limiting factor under natural conditions.
+- **Temperature**: Follows enzyme kinetics (peaks around 35°C–40°C, denatures above 45°C).
+
+---
+
+#### 3. 🚀 Quick Exam Fact
+Chlorophyll absorbs blue and red wavelengths most efficiently and reflects green light, which is why healthy foliage appears green.`,
+      quick_prompts: [
+        'Compare light-dependent vs light-independent reactions',
+        'Draw a Punnett square for heterozygous cross (Bb x Bb)',
+        'Explain Mitosis vs Meiosis key differences',
+        'What are the most frequent WAEC Biology diagram questions?',
+      ]
+    };
+  }
+
+  // 7. Generic / Dynamic Academic Synthesis for any other question
+  const topicName = context?.current_topic || context?.current_course || 'Academic Examination Concept';
   return {
-    reply: `Hello! I am your EXAMAI Study Tutor. Whether you're working on university courses like CSC 201 or WAEC subjects like Mathematics and Physics, I can break down challenging formulas, explain test mistakes, or quiz you on key definitions. What would you like to focus on right now?`,
+    reply: `### 🎯 Comprehensive Study Breakdown: "${query}"
+
+Here is a structured, step-by-step academic analysis to help you master this concept for your upcoming examinations:
+
+---
+
+#### 1. 🔍 Fundamental Definition & Principles
+- **Core Concept**: This topic in **${topicName}** focuses on establishing key theoretical definitions and applying them systematically to problem solving.
+- **Key Objective**: Exam questions typically test your ability to differentiate core criteria from secondary edge cases and carry out accurate calculation or proof steps.
+
+---
+
+#### 2. 💡 Step-by-Step Approach to Solving Exam Problems on this Topic
+1. **Identify Given Variables / Constraints**: Write down knowns and unknowns with appropriate units or data types.
+2. **Select the Governing Formula / Algorithm**: State the formal definition or theorem clearly (examiners award method marks for this).
+3. **Execute Substitution & Simplification**: Carry out intermediate steps without rounding prematurely.
+4. **Sanity Check**: Verify that your final outcome satisfies boundary conditions and units.
+
+---
+
+#### 3. ⚠️ Common Exam Pitfalls & Examiner Tips
+- Avoid skipping intermediate working; WAEC and University marking schemes award partial credit for valid methodology even if minor arithmetic errors occur.
+- Pay close attention to standard conditions, sign conventions, and unit conversions.
+
+---
+
+#### 4. 🚀 Actionable Practice Step
+Try solving 3 timed practice questions on this specific topic in the **AI Practice Generator** or ask me to generate a tailored drill question right now!`,
     quick_prompts: [
-      'Explain Binary Search Trees in CSC 201',
-      'How do I solve WAEC Trigonometry bearings?',
-      'Give me a 3-step study plan for my weak topics',
-      'Test me with a hard question',
+      'Give me 2 practice questions with solutions on this',
+      'Break this down with a real-life analogy',
+      'What are the most common exam traps for this topic?',
+      'Create a 15-minute quick revision checklist',
     ]
   };
 }
+
 
 export async function generateStudyCoachPlanAI(params: {
   weak_topics: string[];

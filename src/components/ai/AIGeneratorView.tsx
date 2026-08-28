@@ -89,7 +89,7 @@ export const AIGeneratorView: React.FC = () => {
 
     startExamSession({
       title: `${subjectOrCourse} AI Practice Drill`,
-      exam_type: examType,
+      exam_type: examType === 'both' ? 'university' : examType,
       category_name: subjectOrCourse,
       difficulty,
       source_type: 'ai_generated',

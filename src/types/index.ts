@@ -1,6 +1,6 @@
 export type ExamType = 'waec' | 'university' | 'both';
 export type QuestionDifficulty = 'easy' | 'medium' | 'hard' | 'mixed';
-export type QuestionType = 'multiple_choice' | 'true_false' | 'mixed';
+export type QuestionType = 'multiple_choice' | 'true_false' | 'calculation' | 'mixed';
 export type SourceType = 'real_past_question' | 'ai_generated' | 'student_submitted';
 export type VerificationStatus = 'verified' | 'pending_review' | 'rejected' | 'reported' | 'archived';
 export type UserRole = 'student' | 'admin';
